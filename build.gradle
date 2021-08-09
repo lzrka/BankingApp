@@ -1,0 +1,78 @@
+plugins {
+	id 'org.springframework.boot' version '2.4.7'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id "org.flywaydb.flyway" version "7.10.0"
+}
+
+group = 'com.greenfoxacademy'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	jaxws
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+	implementation 'com.github.java-json-tools:json-patch:1.12'
+	jaxws 'com.sun.xml.ws:jaxws-tools:2.1.4'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+	implementation 'org.springframework.boot:spring-boot-starter-validation:2.5.1'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'junit:junit:4.13.1'
+	implementation 'io.springfox:springfox-boot-starter:3.0.0'
+	compileOnly 'org.projectlombok:lombok:1.18.20'
+	annotationProcessor 'org.projectlombok:lombok:1.18.20'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'com.h2database:h2'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server', version: '2.5.3'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '2.5.3'
+	implementation group: 'com.microsoft.azure', name: 'azure-active-directory-spring-boot-starter', version: '3.0.0'
+	testImplementation group: 'org.springframework.security', name: 'spring-security-test', version: '5.5.1'
+	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+}
+
+flyway {
+	url = 'jdbc:h2:mem:bankingdb'
+	user = 'sa'
+	password = ''
+}
+
+task wsimport {
+	ext.destDir = file("${projectDir}/src/main/generated")
+	doLast {
+		ant {
+			sourceSets.main.output.classesDirs.inits()
+			destDir.mkdirs()
+			taskdef(name: 'wsimport',
+					classname: 'com.sun.tools.ws.ant.WsImport',
+					classpath: configurations.jaxws.asPath
+			)
+			wsimport(keep: true,
+					sourcedestdir: 'src/main/java',
+					package: "com.greenfoxacademy.bankingbackofficebackendservice.soap",
+					wsdl: 'http://www.mnb.hu/arfolyamok.asmx?WSDL') {
+				xjcarg(value: "-XautoNameResolution")
+			}
+		}
+	}
+}
+
+compileJava {
+	dependsOn wsimport
+	source wsimport.destDir
+}
+
+test {
+	useJUnitPlatform()
+}
+
